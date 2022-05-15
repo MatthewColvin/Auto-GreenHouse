@@ -70,4 +70,9 @@ private:
     uint8_t byteCounter = 0;
     int retVal = 0;
     ErrorCodes handleOp();
+
+    // Spi port resets
+    unsigned long lastSpiOp = 0;
+    void resetState();
+    const int noReadResetTimeout = 10000; // 10 seconds if not spi transactions then reset state
 };

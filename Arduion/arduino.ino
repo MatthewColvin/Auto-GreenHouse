@@ -1,13 +1,29 @@
+
+#define ENABLE_PRINT
+#ifndef ENABLE_PRINT
+// disable Serial output
+#define Serial SomeOtherwiseUnusedName
+static class
+{
+public:
+  void begin(...) { delay(20); }
+  void print(...) { delay(20); }
+  void println(...) { delay(20); }
+} Serial;
+#endif
+
 #include <SPI.h>
 #include "SpiCtrl.h"
 void spiSetup();
 int ledPin = 7;
+int LLshiftTestPin = 4;
 
 unsigned long lastPotDebugPrint;
 const int potDebugPrintDelay = 5000; // print pot logs every second
 
 unsigned long lightlastToggled;
 bool lightOn;
+bool TestLit = false;
 
 SpiCtrl spiControl;
 
@@ -22,9 +38,13 @@ void setup()
   // LED setup
   lightlastToggled = millis();
   pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
   lightOn = false;
   // POT setup
   lastPotDebugPrint = millis();
+  // ll setup
+  pinMode(LLshiftTestPin, OUTPUT);
+  digitalWrite(LLshiftTestPin, LOW);
 }
 
 void loop()
@@ -39,26 +59,30 @@ void loop()
     lastPotDebugPrint = millis();
   }
 
-  handleLed(potVal);
+  if (millis() > 500 && !TestLit)
+  {
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(LLshiftTestPin, HIGH);
+    TestLit = true;
+  }
+
+  handleLed(potVal * 10);
 }
 
-void handleLed(unsigned long blinkDelay)
+void handleLed(unsigned long resetTime)
 {
-  if (millis() > lightlastToggled + blinkDelay)
+  bool lightToggled = lightOn != digitalRead(ledPin);
+  if (lightToggled)
   {
-    if (!lightOn)
-    {
-      // Serial.write("write high");
-      digitalWrite(ledPin, HIGH);
-      lightOn = true;
-    }
-    else
-    {
-      // Serial.println("write low");
-      digitalWrite(ledPin, LOW);
-      lightOn = false;
-    }
     lightlastToggled = millis();
+  }
+
+  lightOn = digitalRead(ledPin);
+  if (millis() > lightlastToggled + resetTime && lightOn)
+  {
+    // Serial.println("write low");
+    digitalWrite(ledPin, LOW);
+    digitalWrite(LLshiftTestPin, LOW);
   }
 }
 
